@@ -1,0 +1,56 @@
+
+library(mice)
+library(graphics)
+library(lattice)
+library(Hmisc)
+
+######################################################################################################
+############ CHECKING THE IMPUTATIONS ################################################################
+######################################################################################################
+
+
+
+fit <- with(imp, lm(X4MSCALK1 ~ T1MDIFF))
+summary(pool(fit))
+
+# densityplot(imp0517, scales = list(x = list(relation = "free")), layout = c(5, 2))
+# error: cannot allocate vector of size 40.0 Gb
+
+# Density plots of original vs imputed data for specific variables
+densityplot(imp0517, data = ~X1MSCALK1, scales = list(x = list(relation = "free")), layout = c(1,1))
+densityplot(imp0517, data = ~X4MSCALK1, scales = list(x = list(relation = "free")), layout = c(1,1))
+densityplot(imp0517, data = ~T1MDIFF, scales = list(x = list(relation = "free")), layout = c(1,1))
+densityplot(imp0517, data = ~T1MARSAV, scales = list(x = list(relation = "free")), layout = c(1,1))
+densityplot(imp0517, data = ~T4MARSAV, scales = list(x = list(relation = "free")), layout = c(1,1))
+
+
+# Plot missingness against values for T1MDIFF
+tdiff.na <- is.na(data0517$T1MDIFF)
+fit.tdiff <- with(imp0517, glm(tdiff.na ~ X1MSCALK1 + X4MSCALK1 + X1KAGE_R, family = binomial))
+ps <- rep(rowMeans(sapply(fit.tdiff$analyses, fitted.values)), 41)
+xyplot(imp0517, T1MDIFF ~ ps | .imp, pch = c(1, 20), cex = c(0.8, 1.2),
+       xlab = "Probability that T1 Math Diff Score is missing", 
+       ylab = "T1 Math Diff Score", scales = list(tick.number = 3))
+probMissing <- xyplot(imp0517, T1MDIFF ~ ps | .imp, pch = c(0.8, 1.2), alpha = 0.1, # or pch=1,20?
+       xlab = "Probability that T1 Math Diff Score is missing", 
+       ylab = "T1 Math Diff Score", scales = list(tick.number = 3))
+print(probMissing)
+
+# ?panel.xyplot
+# ?xyplot
+# trellis.par.get()
+# install.packages("hexbin",dependencies=T)
+# library(hexbin)
+
+######################################################################################################
+############ THE ACTUAL DATA ANALYSIS! ###############################################################
+######################################################################################################
+
+
+# Run the linear model!!!
+fit <- with(imp, lm(X1MSCALK1 ~ X1KAGE_R))
+round(summary(pool(fit)),5)
+
+cor(may_4_new$X1MSCALK1,may_4_new$T1MARSAV, use='pairwise.complete.obs')
+rcorr()
+
